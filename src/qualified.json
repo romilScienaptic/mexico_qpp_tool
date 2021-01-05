@@ -1,0 +1,91 @@
+[
+    {
+        "account":"Staples Inc",
+        "DBA":"Staples",
+        "location_id":"10245678",
+        "print_status":"Calificado",
+        "supplies_status":"Calificado",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"222121323",
+        "supplies_revenue":"1965615551"
+    },
+    {
+        "account":"Best Buy Purchasing LLC",
+        "DBA":"Best Buy",
+        "location_id":"10245679",
+        "print_status":"Certificado ",
+        "supplies_status":"Certificado ",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"782121323",
+        "supplies_revenue":"9165615551"
+    },
+    {
+        "account":"Walmart Stores Inc",
+        "DBA":"Walmart",
+        "location_id":"10245680",
+        "print_status":"Calificado",
+        "supplies_status":"Calificado ",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"672121323",
+        "supplies_revenue":"3165615551"
+    },
+    {
+        "account":"Costco WholeSale",
+        "DBA":"Costco",
+        "location_id":"10245681",
+        "print_status":"Certificado",
+        "supplies_status":"Certificado",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"452121323",
+        "supplies_revenue":"7265615551"
+    },
+    {
+        "account":"CDW Logistics LLC",
+        "DBA":"CDW Logistics Inc",
+        "location_id":"10245682",
+        "print_status":"Calificado",
+        "supplies_status":"Calificado",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"152121323",
+        "supplies_revenue":"95615551"
+    },
+    {
+        "account":"Office Depot Inc.",
+        "DBA":"Office Depot",
+        "location_id":"10245683",
+        "print_status":"Certificado",
+        "supplies_status":"Certificado",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"521323",
+        "supplies_revenue":"9551"
+    },
+    {
+        "account":"Amazon.com Inc",
+        "DBA":"Amazon",
+        "location_id":"10245684",
+        "print_status":"Calificad0",
+        "supplies_status":"Calificad0",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"23521323",
+        "supplies_revenue":"95517864"
+    },
+    {
+        "account":"Computer Systems LLC",
+        "DBA":"Computer Systems",
+        "location_id":"10245685",
+        "print_status":"Certificado",
+        "supplies_status":"Certificado",
+        "exceptions":"",
+        "reason":"",
+        "pps_revenue":"83521323",
+        "supplies_revenue":"65517864"
+    }
+  
+]

@@ -1,0 +1,7 @@
+.ant-select-selection__placeholder, .ant-select-search__field__placeholder{
+    color: #000;
+}
+
+.ant-select-selection-selected-value{
+    color:#000;
+}

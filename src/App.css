@@ -1,0 +1,15 @@
+/* .ant-tooltip-placement-right .ant-tooltip-arrow,
+ .ant-tooltip-placement-rightTop .ant-tooltip-arrow, 
+ .ant-tooltip-placement-rightBottom .ant-tooltip-arrow{
+  border-right-color: #0095d9 !important;
+}
+.ant-tooltip-inner{
+  background-color: #0095d9 !important;
+} */
+.ant-pagination-item a{
+  color: #5a5a5a;
+}
+
+/* .ant-tooltip .ant-tooltip-placement-top{
+  background-color: #0095d9 !important;
+} */
