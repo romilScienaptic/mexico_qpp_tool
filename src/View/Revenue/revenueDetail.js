@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Col, Button, Row, Divider, Collapse, Modal, message, Typography } from 'antd';
+import { Table, Col, Button, Row, Divider, Collapse, Modal, message, Typography, Popconfirm, Icon, Select, Input, Checkbox, Form } from 'antd';
 import CurrencyFormat from 'react-currency-format';
 import Dropdown from '../../Components/Select/select';
 // import EditableLabel from 'react-editable-label';
@@ -11,10 +11,78 @@ import Loading from '../../Components/Loading/loading';
 import axios from 'axios';
 import './revenue.scss';
 
+
+const EditableContext = React.createContext();
+const { Option } = Select;
+const { Search } = Input;
 const { Panel } = Collapse;
 const { Text } = Typography;
 
 let Fyear = [], secondYear = [];
+
+
+let dataPacket = [], revenue_flag = '';
+
+class EditableCell extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            revenue_flag: ''
+        }
+    }
+
+    check = (event) => {
+        revenue_flag = event.target.checked;
+    }
+
+    getInput = () => {
+        if (this.props.dataIndex === "threshold") {
+            return <Input style={{ width: '7em' }}
+                checked={revenue_flag !== '' ? revenue_flag : this.props.record["threshold"]}
+                onChange={this.check}
+            />
+        }
+        return <Input allowClear />;
+    };
+
+    renderCell = ({ getFieldDecorator }) => {
+        const {
+            editing,
+            dataIndex,
+            title,
+            inputType,
+            record,
+            index,
+            children,
+            ...restProps
+        } = this.props;
+        return (
+            <td {...restProps}>
+                {editing ? (
+                    <Form.Item style={{ margin: 0 }}>
+                        {getFieldDecorator(dataIndex, {
+                            rules: [
+                                {
+                                    required: false,
+                                    message: `Please Input ${title}!`
+                                }
+                            ],
+                            initialValue: record[dataIndex]
+                        })(this.getInput())}
+                    </Form.Item>
+                ) : (
+                        children
+                    )}
+            </td>
+        );
+    };
+
+    render() {
+        return (
+            <EditableContext.Consumer>{this.renderCell}</EditableContext.Consumer>
+        );
+    }
+}
 
 class revenueDetails extends React.Component {
     constructor(props) {
@@ -31,10 +99,10 @@ class revenueDetails extends React.Component {
             membershipSupplies: '',
             pcMembership: '',
             printMembership: '',
-            pcStatus:'',
-            hps:'',
-            ops:'',
-            supplies:'',
+            pcStatus: '',
+            hps: '',
+            ops: '',
+            supplies: '',
             region: '',
             state: '',
             taxId: '',
@@ -54,7 +122,9 @@ class revenueDetails extends React.Component {
             expirationDate: null,
             externalPhoneNumber: '',
             contactNumber: '',
-            dataRecevied: false
+            dataRecevied: false,
+            rValue: '',
+            editingKey: '',
         }
     }
 
@@ -62,16 +132,16 @@ class revenueDetails extends React.Component {
         // document.title = sessionStorage.getItem('accountName') + ' ' +'Revenue';
         return new Promise((resolve, reject) => {
             resolve(
-                axios.get(process.env.REACT_APP_DOMAIN+'/qpp/qpp_revenue/'+sessionStorage.getItem('id'))
+                axios.get(process.env.REACT_APP_DOMAIN + '/qpp/qpp_revenue/' + sessionStorage.getItem('accountName'))//accountName
                     .then(response => {
                         if (response.status === 200) {
-                            Fyear = response.data.result["2020"];
-                            secondYear = response.data.result["2019"];
+                            Fyear = response.data.result.Year2;
+                            secondYear = response.data.result.Year1;
                             this.setState({
-                                tableData: response.data.result["2020"],
-                                firstYear: response.data.result["2020"],
-                                secondYear: response.data.result["2019"],
-                                thirdYear: response.data.result["2018"],
+                                tableData: response.data.result.Year2,
+                                firstYear: response.data.result.Year2,
+                                secondYear: response.data.result.Year1,
+                                // thirdYear: response.data.result["2018"],
                                 tax: sessionStorage.getItem('taxID')
                             }, () => this.history())
                         }
@@ -123,7 +193,7 @@ class revenueDetails extends React.Component {
                                 expirationDate: response.data.result.expirationDate,
                                 hpInternalName: response.data.result.hpInternalName,
                                 contractNumber: response.data.result.contractNumber,
-                                addressLine: response.data.result.addressLine !== "#N/A" ? response.data.result.addressLine  : '',
+                                addressLine: response.data.result.addressLine !== "#N/A" ? response.data.result.addressLine : '',
                                 externalContactName: response.data.result.externalContactName,
                                 contractActive: response.data.result.contractActive,
                                 mayorista: response.data.result.mayorista,
@@ -135,7 +205,7 @@ class revenueDetails extends React.Component {
                                 pcStatus: response.data.result.pcStatus,
                                 suppliesStatus: response.data.result.suppliesStatus,
                                 hpsStatus: response.data.result.hpsStatus,
-		                        opsStatus: response.data.result.opsStatus
+                                opsStatus: response.data.result.opsStatus
                             }, () => this.getYears())
                         }
                     })
@@ -189,38 +259,52 @@ class revenueDetails extends React.Component {
     }
 
     loadData = (value) => {
-        if (value === "FY 2018") {
-            this.setState({
-                tableData: [],
-                year: value,
-                tableData: this.state.thirdYear
+        let val = value.slice(3, 7);
+        // add api
+        // if (value === "FY 2018") {
+        //     this.setState({
+        //         tableData: [],
+        //         year: value,
+        //         tableData: this.state.thirdYear
+        //     })
+        // }
+        axios.get(process.env.REACT_APP_DOMAIN + `/qpp/qpp_revenue/${sessionStorage.getItem('accountName')}/${val}`)
+            .then(response => {
+                if (response.status == 200) {
+                    this.setState({
+                        tableData: [],
+                        year: value,
+                        tableData: response.data.result,
+                    })
+                }
             })
-        }
-        if (value === "FY 2019") {
-            this.setState({
-                tableData: [],
-                year: value,
-                tableData: this.state.secondYear
-            })
-        }
-        else if (value === "FY 2020") {
-            this.setState({
-                tableData: [],
-                year: value,
-                tableData: this.state.firstYear
-            })
-        }
+            .catch(err => err);
+        // if (value === "FY 2019") {
+        //     this.setState({
+        //         tableData: [],
+        //         year: value,
+        //         tableData: this.state.secondYear
+        //     })
+        // }
+        // else if (value === "FY 2020") {
+        //     this.setState({
+        //         tableData: [],
+        //         year: value,
+        //         tableData: this.state.firstYear
+        //     })
+        // }
     }
 
     select = (value) => {
         this.setState({
-            tableData: []
+            tableData: [],
+            rValue: value,
         }, () => this.loadData(value))
     }
 
     taxID = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' +sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "rfcOrTaxId": value
                 })
@@ -239,7 +323,7 @@ class revenueDetails extends React.Component {
 
     email = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "email": value
                 })
@@ -258,7 +342,7 @@ class revenueDetails extends React.Component {
 
     zip = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "zip": value
                 })
@@ -277,7 +361,7 @@ class revenueDetails extends React.Component {
 
     website = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "webSiteUrl": value
                 })
@@ -334,7 +418,7 @@ class revenueDetails extends React.Component {
 
     externalPhoneNumber = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "phoneExternalContact": value
                 })
@@ -353,7 +437,7 @@ class revenueDetails extends React.Component {
 
     commercialOrConsumer = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "commercialOrConsumer": value
                 })
@@ -372,7 +456,7 @@ class revenueDetails extends React.Component {
 
     lid = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "locationId": value,
                 })
@@ -391,7 +475,7 @@ class revenueDetails extends React.Component {
 
     mayorista = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "mayorista": value
                 })
@@ -410,7 +494,7 @@ class revenueDetails extends React.Component {
 
     contractActive = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "contractActive": value
                 })
@@ -429,7 +513,7 @@ class revenueDetails extends React.Component {
 
     externalContactName = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "externalContactName": value
                 })
@@ -448,7 +532,7 @@ class revenueDetails extends React.Component {
 
     addressLine = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "addressLine": value
                 })
@@ -467,7 +551,7 @@ class revenueDetails extends React.Component {
 
     contractNumber = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "contractNumber": value
                 })
@@ -486,7 +570,7 @@ class revenueDetails extends React.Component {
 
     internalContact = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "hpInternalName": value
                 })
@@ -503,9 +587,9 @@ class revenueDetails extends React.Component {
         })
     }
 
-    supplies = (value) =>{
+    supplies = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "suppliesStatus": value
                 })
@@ -522,9 +606,9 @@ class revenueDetails extends React.Component {
         })
     }
 
-    opsStatus = (value) =>{
+    opsStatus = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "opsStatus": value
                 })
@@ -541,9 +625,9 @@ class revenueDetails extends React.Component {
         })
     }
 
-    hpsStatus = (value) =>{
+    hpsStatus = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "hpsStatus": value
                 })
@@ -560,9 +644,9 @@ class revenueDetails extends React.Component {
         })
     }
 
-    program = (value) =>{
+    program = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "pcStatus": value
                 })
@@ -581,7 +665,7 @@ class revenueDetails extends React.Component {
 
     printMembership = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "membershipPrint": value
                 })
@@ -600,7 +684,7 @@ class revenueDetails extends React.Component {
 
     pcMembership = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "membershipPc": value
                 })
@@ -619,7 +703,7 @@ class revenueDetails extends React.Component {
 
     membershipSupplies = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "memberShipSupply": value,
                 })
@@ -638,7 +722,7 @@ class revenueDetails extends React.Component {
 
     city = (value, id) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "cityOrRegion": value,
                 })
@@ -657,7 +741,7 @@ class revenueDetails extends React.Component {
 
     address = (value) => {
         return new Promise((resolve, reject) => {
-            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/'+sessionStorage.getItem('id'),
+            axios.put(process.env.REACT_APP_DOMAIN + '/qpp/qpp_summary/' + sessionStorage.getItem('id'),
                 {
                     "state": value,
                 })
@@ -674,18 +758,113 @@ class revenueDetails extends React.Component {
         })
     }
 
+    Change = (dateString, dateFormat) => {
+        this.setState({ dateEdit: dateFormat })
+    }
+
+    isEditing = record => record.key === this.state.editingKey;
+
+    cancel = () => {
+        revenue_flag = '';
+        this.setState({ editingKey: "", flag: true });
+    };
+
+    save(form, key) {
+        form.validateFields((error, row) => {
+            if (error) {
+                return;
+            }
+            const newData = [...this.state.tableData];
+            const index = newData.findIndex(item => key === item.key);
+            if (index > -1) {
+                newData[index].role = this.state.dateEdit;
+                const item = newData[index];
+                newData.splice(index, 1, {
+                    ...item,
+                    ...row
+                });
+                console.log(item.key, row, row["threshold"])
+                let hpsrevenue = 0, opsrevenue = 0, pcsRevenue = 0, suppliesRevenue = 0;
+                if (item.key == 11) {
+                    hpsrevenue = row["threshold"];
+                }
+                if (item.key == 12) {
+                    suppliesRevenue = row["threshold"];
+                }
+                if (item.key == 13) {
+                    opsrevenue = row["threshold"];
+                }
+                if (item.key == 14) {
+                    pcsRevenue = row["threshold"];
+                }
+                return new Promise((resolve, reject) => {
+                    axios.put(process.env.REACT_APP_DOMAIN + '/qpp/target_revenue',
+                        {
+                            "accountName": sessionStorage.getItem('accountName'),
+                            "hpsrevenue": hpsrevenue,
+                            "opsrevenue": opsrevenue,
+                            "pcsRevenue": pcsRevenue,
+                            "suppliesRevenue": suppliesRevenue,
+                        })
+                        .then(response => {
+                            if (response.status === 200) {
+                                revenue_flag = '';
+                                this.setState({
+                                    editingKey: "",
+                                    flag: true,
+                                    show: false
+                                }, () => this.componentDidMount())
+                            }
+                        })
+                        .catch(function (error) {
+                            message.error('Server is Down. Please try Later!');
+                        })
+                })
+            } else {
+                newData.push(row);
+                this.setState({ tableData: newData, editingKey: "" });
+            }
+        });
+    }
+
+    delete(key) {
+        const newData = [...this.state.tableData];
+        const index = newData.findIndex(item => key === item.key);
+        if (index > -1) {
+            const item = newData[index];
+            newData.splice(index, 1);
+            this.setState({
+                tableData: newData,
+                editingKey: "",
+                dataRecevied: false
+            });
+
+        } else {
+            this.setState({ tableData: newData, editingKey: "" });
+        }
+
+    }
+
+    edit(key) {
+        this.setState({ editingKey: key, flag: false, editFlag: true });
+    }
+
     render() {
-        const columns = [
+        this.columns = [
             {
                 title: 'Category',
                 dataIndex: 'category',
-                key: 'name',
+                editable: false,
+                align: 'left',
+                key: 'category',
             },
             {
                 title: 'Product Line',
                 dataIndex: 'subcategory',
-                key: 'age',
-                width: "20%",
+                editable: false,
+                width: "10%",
+                align: 'center',
+                key: 'subcategory',
                 render: (text) => {
                     return (
                         <strong>{text}</strong>
@@ -693,42 +872,158 @@ class revenueDetails extends React.Component {
                 }
             },
             {
+                title: 'Thresholds per Quarter',
+                dataIndex: 'threshold',
+                editable: true,
+                key: 'threshold',
+                align: 'center',
+                key: 'threshold',
+            },
+            {
                 title: this.state.year + ' ' + 'Q1',
                 dataIndex: 'revenueQ1',
-                key: '',
-                render: (text) => {
-                    return (
-                        <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
-                    )
+                editable: false,
+                align: 'center',
+                key: 'revenueQ1',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
                 }
+            },
+            {
+                title: 'Threshold Difference Q1',
+                dataIndex: 'thresholdDifferenceQ1',
+                editable: false,
+                align: 'center',
+                key: 'thresholdDifferenceQ1',
             },
             {
                 title: this.state.year + ' ' + 'Q2',
                 dataIndex: 'revenueQ2',
-                render: (text) => {
-                    return (
-                        <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
-                    )
+                align: 'center',
+                editable: false,
+                key: 'revenueQ2',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
                 }
+            },
+            {
+                title: 'Threshold Difference Q2',
+                dataIndex: 'thresholdDifferenceQ2',
+                editable: false,
+                align: 'center',
+                key: 'thresholdDifferenceQ2',
             },
             {
                 title: this.state.year + ' ' + 'Q3',
                 dataIndex: 'revenueQ3',
-                render: (text) => {
-                    return (
-                        <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
-                    )
+                editable: false,
+                align: 'center',
+                key: 'revenueQ3',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
                 }
+            },
+            {
+                title: 'Threshold Difference Q3',
+                dataIndex: 'thresholdDifferenceQ3',
+                editable: false,
+                align: 'center',
+                key: 'thresholdDifferenceQ3',
             },
             {
                 title: this.state.year + ' ' + 'Q4',
                 dataIndex: 'revenueQ4',
-                render: (text) => {
-                    return (
-                        <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
-                    )
+                editable: false,
+                align: 'center',
+                key: 'revenueQ4',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
                 }
-            }
+            },
+            {
+                title: 'Threshold Difference Q4',
+                dataIndex: 'thresholdDifferenceQ4',
+                editable: false,
+                align: 'center',
+                key: 'thresholdDifferenceQ4',
+            },
+            {
+                title: "",
+                dataIndex: "operation",
+                width: "10%",
+                align: 'center',
+                editable: false,
+                render: (text, record) => {
+                    const { editingKey } = this.state;
+                    const editable = this.isEditing(record);
+                    return editable ? (
+                        <span>
+                            <EditableContext.Consumer>
+                                {form => (
+                                    <a
+                                        href="javascript:;"
+                                        onClick={() => this.save(form, record.key)}
+                                        style={{ marginRight: 8 }}
+                                    >
+                                        <Icon type="save" theme="filled" />
+                            Save
+                                    </a>
+                                )}
+                            </EditableContext.Consumer>
+                            <span style={{ marginLeft: "1em" }}></span>
+                            <Popconfirm
+                                title="Sure to cancel?"
+                                icon={<Icon type="question-circle-o" style={{ color: 'red' }} />}
+                                onConfirm={() => this.cancel(record.key)}
+                            >
+                                <a><Icon type="close-circle" theme="filled" />Cancel</a>
+                            </Popconfirm>
+                        </span>
+                    ) : (
+                            <div>
+                                {record.key == 11 || record.key == 12 || record.key == 13 || record.key == 14 ?
+                                    <a disabled={editingKey !== ""} onClick={() => this.edit(record.key)}><Icon type="edit" theme="filled" />Edit</a> :
+                                    null}
+                            </div>
+                        );
+                }
+            },
         ];
         const compliaceColumns = [
             {
@@ -754,6 +1049,31 @@ class revenueDetails extends React.Component {
                 key: 'notes',
             }
         ];
+
+
+        const components = {
+            body: {
+                cell: EditableCell
+            }
+        };
+
+
+        const columns = this.columns.map(col => {
+            if (!col.editable) {
+                return col;
+            }
+            return {
+                ...col,
+                onCell: record => ({
+                    record,
+                    inputType: col.dataIndex === "role" ? "date" : "text",
+                    dataIndex: col.dataIndex,
+                    title: col.title,
+                    editing: this.isEditing(record)
+                })
+            };
+        });
+
         return (this.state.dataRecevied === true ? (
             <div>
                 <Col span={24}>
@@ -771,7 +1091,7 @@ class revenueDetails extends React.Component {
                     <Col span={1}></Col>
                     <Col span={3}></Col>
                     <Col span={17}></Col>
-                    <Col span={2} style={{ marginLeft: "3em" }}>
+                    <Col span={2}>
                         <Button type="primary" onClick={this.back} icon="rollback">Back</Button>
                     </Col>
                 </Col>
@@ -787,9 +1107,9 @@ class revenueDetails extends React.Component {
                                     <Col span={2}></Col>
                                     <Col span={2} style={{ marginTop: "0.3em", marginLeft: '0.4em' }}><label className="title">Website URL</label></Col>
                                     <Col span={6} style={{ marginLeft: "3.8em" }}>
-                                            <label className="title" style={{ cursor: "pointer" }}>
-                                                <Text editable={{ onChange: this.website }}>{this.state.website}</Text>
-                                            </label>
+                                        <label className="title" style={{ cursor: "pointer" }}>
+                                            <Text editable={{ onChange: this.website }}>{this.state.website}</Text>
+                                        </label>
                                     </Col>
                                 </Col>
                                 <Col span={24} style={{ marginTop: "0.5em" }}>
@@ -974,7 +1294,7 @@ class revenueDetails extends React.Component {
                 <Col span={24} style={{ marginTop: "-0.8em" }}>
                     <Col span={1}></Col>
                     <Col span={14}>
-                        <strong>{sessionStorage.getItem('accountName') + ' ' + 'Revenue for'}</strong><span style={{ color: "#0095d9", fontWeight: 600, marginLeft: "1em" }}><Dropdown select={this.select} data={this.state.selectData} placeholder={"-- " + 'Select FY' + " --"} value={this.state.year} width={150} /></span>
+                        <strong>{sessionStorage.getItem('accountName') + ' ' + 'Revenue for'}</strong><span style={{ color: "#0095d9", fontWeight: 600, marginLeft: "1em" }}><Dropdown select={this.select} data={this.state.selectData} placeholder={"-- " + 'Select FY' + " --"} value={this.state.rValue} width={150} /></span>
                     </Col>
                     <Col span={5}></Col>
                     <Col span={3} style={{ marginLeft: "0.5em" }}>
@@ -984,12 +1304,15 @@ class revenueDetails extends React.Component {
                 <Col span={24} style={{ marginTop: "0.5em" }}>
                     <Col span={1}></Col>
                     <Col span={22} style={{ marginTop: "0.5em" }}>
-                        <Table
-                            columns={columns}
-                            dataSource={this.state.tableData}
-                            pagination={false}
-                            rowClassName={(record, index) => record.category === "Grand Total" ? 'total' : 'remain'}
-                        />
+                        <EditableContext.Provider value={this.props.form}>
+                            <Table
+                                components={components}
+                                columns={columns}
+                                dataSource={this.state.tableData}
+                                pagination={false}
+                                rowClassName={(record, index) => record.category === "Grand Total" ? 'total' : 'remain'}
+                            />
+                        </EditableContext.Provider>
                     </Col>
                 </Col>
                 <Col span={24} style={{ marginTop: "-0.5em" }}>
@@ -1029,4 +1352,7 @@ class revenueDetails extends React.Component {
         );
     }
 }
-export default revenueDetails;
+
+const EditableFormTable = Form.create()(revenueDetails);
+
+export default EditableFormTable;

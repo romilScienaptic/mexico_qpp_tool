@@ -3,7 +3,7 @@
     border: 1px dashed #e9e9e9;
     border-radius: 6px;
     background-color: #fafafa;
-    min-height: 320px;
+    min-height: 220px;
     overflow: auto;
     text-align: center;
     padding-top: 20px;
@@ -39,5 +39,18 @@
 }
 
 .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title{
-  color:#0093D3;
+  color:#0086c0;
+}
+
+#components-dropdown-demo-arrow .ant-btn {
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.ant-row-rtl #components-dropdown-demo-arrow .ant-btn {
+  margin-right: 0;
+  margin-bottom: 8px;
+  margin-left: 8px;
+}
+.ant-modal-footer{
+  border: none;
 }

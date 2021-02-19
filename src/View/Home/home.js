@@ -414,9 +414,14 @@ class EditableTable extends React.Component {
       })
     }
     else if (event.target.id === 'search') {
+      if(event.target.value.length == 0){
+        this.refresh();
+      }
+      else{
       this.setState({
         search: event.target.value
       })
+    }
     }
   }
 

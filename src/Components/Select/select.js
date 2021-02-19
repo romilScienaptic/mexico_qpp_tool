@@ -34,7 +34,7 @@ class Dropdown extends React.Component{
     }
     render(){
         return(
-            <Select defaultValue= {this.props.defaultValue} style={{ width: this.props.width, border:this.props.border }} showSearch onChange={this.handleChange} placeholder={this.props.placeholder} value={this.state.val} >
+            <Select mode ={this.props.mode} defaultValue= {this.props.defaultValue} style={{ width: this.props.width, border:this.props.border }} showSearch onChange={this.handleChange} placeholder={this.props.placeholder} value={this.state.val} >
                 {
                     this.props.data.map((data,i)=>{
                     return(
