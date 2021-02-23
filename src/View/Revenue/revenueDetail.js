@@ -783,7 +783,7 @@ class revenueDetails extends React.Component {
                     ...item,
                     ...row
                 });
-                console.log(item.key, row, row["threshold"])
+                // console.log(item.key, row, row["threshold"])
                 let hpsrevenue = 0, opsrevenue = 0, pcsRevenue = 0, suppliesRevenue = 0;
                 if (item.key == 11) {
                     hpsrevenue = row["threshold"];
@@ -877,7 +877,18 @@ class revenueDetails extends React.Component {
                 editable: true,
                 key: 'threshold',
                 align: 'center',
-                key: 'threshold',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q1',
@@ -904,6 +915,18 @@ class revenueDetails extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ1',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q2',
@@ -930,6 +953,18 @@ class revenueDetails extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ2',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q3',
@@ -956,6 +991,18 @@ class revenueDetails extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ3',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q4',
@@ -982,6 +1029,18 @@ class revenueDetails extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ4',
+                render: (text, title) => {
+                    if (title.category == '2.Supplies' || title.category == '3.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: "",

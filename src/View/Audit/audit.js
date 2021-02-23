@@ -6,6 +6,7 @@ import { Steps, Button, message, Col, Input, Checkbox, Divider, DatePicker, Typo
 import CurrencyFormat from 'react-currency-format';
 import Dropdown from '../../Components/Select/select';
 import Hp from '../../assets/images/Hp.png';
+import Image from '../../assets/images/Hp.png';
 import moment from 'moment';
 import axios from 'axios';
 import { UploadOutlined } from '@ant-design/icons';
@@ -213,6 +214,8 @@ class Audit extends React.Component {
             dollerUnit: 'Units',
             letterDownloading: false,
             letterSending: false,
+            secondModel: false,
+            saveFileResponse: '',
         };
     }
 
@@ -885,48 +888,17 @@ class Audit extends React.Component {
     }
 
     handleOk = () => {
-        if (this.state.emailFor != "" && this.state.emailNote1 != "" && this.state.emailNote2 != "" && this.state.emailNote3 != "" && this.state.emailNote4 != "" && this.state.emailNote5 != "") {
-            this.setState({
-                letterDownloading: true,
-            })
-            axios.post(process.env.REACT_APP_DOMAIN + '/qpp/qpp/save_file', {
-                "accountName": sessionStorage.getItem('accountName'),
-                "cause1": this.state.emailNote1,
-                "cause2": this.state.emailNote2,
-                "cause3": this.state.emailNote3,
-                "cause4": this.state.emailNote4,
-                "cause5": this.state.emailNote5,
-                "emailType": this.state.emailFor,
-            })
-                .then(response => {
-                    if (response.status === 200) {
-                        console.log('value->', response)
-                        const binaryString = window.atob(response.data.result); // Comment this if not using base64
-                        const bytes = new Uint8Array(binaryString.length);
-                        const res = bytes.map((byte, i) => binaryString.charCodeAt(i));
-                        console.log('res', res)
-                        this.createAndDownloadBlobFile(res, 'file')
-                        this.setState({
-                            letterDownloading: false,
-                        })
-                    }
-                    else {
-                        message.error('something went wrong!')
-                        this.setState({
-                            letterDownloading: false,
-                        })
-                    }
-                })
-                .catch(err => {
-                    message.error('Server is Down. Please try Later!');
-                    this.setState({
-                        letterDownloading: false,
-                    })
-                })
-        }
-        else {
-            message.error("Please fill all the fields")
-        }
+        this.setState({
+            letterDownloading: true,
+        })
+        const binaryString = window.atob(this.state.saveFileResponse); // Comment this if not using base64
+        const bytes = new Uint8Array(binaryString.length);
+        const res = bytes.map((byte, i) => binaryString.charCodeAt(i));
+        console.log('res', res)
+        this.createAndDownloadBlobFile(res, 'file')
+        this.setState({
+            letterDownloading: false,
+        })
     };
 
     handleCancel = () => {
@@ -957,36 +929,90 @@ class Audit extends React.Component {
     }
 
     sendEmail = () => {
+        this.setState({
+            letterSending: true,
+        })
+        axios.post(process.env.REACT_APP_DOMAIN + `/qpp/qpp/send_email/${this.state.emailFor}`)
+            .then(response => {
+                if (response.status == 200) {
+                    this.setState({
+                        modelVisible: false,
+                        letterSending: false,
+                    })
+                    message.success('Letter Sent Successfully!')
+                }
+                else {
+                    this.setState({
+                        letterSending: false,
+                    })
+                    message.error(response.result)
+                }
+            })
+            .catch(err => {
+                message.error('Server is Down. Please try Later!');
+                this.setState({
+                    letterSending: false,
+                })
+            })
+    }
+
+    nextModal = () => {
         if (this.state.emailFor != "" && this.state.emailNote1 != "" && this.state.emailNote2 != "" && this.state.emailNote3 != "" && this.state.emailNote4 != "" && this.state.emailNote5 != "") {
             this.setState({
-                letterSending: true,
+                nextButtonLoading: true,
             })
-            axios.post(process.env.REACT_APP_DOMAIN + `/qpp/qpp/send_email/${this.state.emailFor}`)
+            axios.post(process.env.REACT_APP_DOMAIN + '/qpp/qpp/save_file', {
+                "accountName": sessionStorage.getItem('accountName'),
+                "cause1": this.state.emailNote1,
+                "cause2": this.state.emailNote2,
+                "cause3": this.state.emailNote3,
+                "cause4": this.state.emailNote4,
+                "cause5": this.state.emailNote5,
+                "emailType": this.state.emailFor,
+            })
                 .then(response => {
-                    if (response.status == 200) {
+                    if (response.status === 200) {
                         this.setState({
+                            saveFileResponse: response.data.result,
                             modelVisible: false,
-                            letterSending: false,
+                            secondModel: true,
+                            nextButtonLoading: false,
                         })
-                        message.success('Letter Sent Successfully!')
                     }
                     else {
+                        message.error('something went wrong!')
                         this.setState({
-                            letterSending: false,
+                            nextButtonLoading: false,
                         })
-                        message.error(response.result)
                     }
                 })
                 .catch(err => {
                     message.error('Server is Down. Please try Later!');
                     this.setState({
-                        letterSending: false,
+                        nextButtonLoading: false,
                     })
                 })
+            // setTimeout(
+            //     function () {
+            //         this.setState({
+            //             modelVisible: false,
+            //             secondModel: true,
+            //             nextButtonLoading: false,
+            //         })
+            //     }
+            //         .bind(this),
+            //     2000
+            // );
         }
         else {
             message.error("Please fill all the fields")
         }
+    }
+    prevModal = () => {
+        this.setState({
+            modelVisible: true,
+            secondModel: false,
+        })
     }
     render() {
         const { current } = this.state;
@@ -1017,7 +1043,18 @@ class Audit extends React.Component {
                 editable: true,
                 key: 'threshold',
                 align: 'center',
-                key: 'threshold',
+                render: (text, title) => {
+                    if (title.category == '1.Supplies' || title.category == '2.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q1',
@@ -1044,6 +1081,18 @@ class Audit extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ1',
+                render: (text, title) => {
+                    if (title.category == '1.Supplies' || title.category == '2.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q2',
@@ -1070,6 +1119,18 @@ class Audit extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ2',
+                render: (text, title) => {
+                    if (title.category == '1.Supplies' || title.category == '2.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q3',
@@ -1096,6 +1157,18 @@ class Audit extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ3',
+                render: (text, title) => {
+                    if (title.category == '1.Supplies' || title.category == '2.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: this.state.year + ' ' + 'Q4',
@@ -1122,6 +1195,18 @@ class Audit extends React.Component {
                 editable: false,
                 align: 'center',
                 key: 'thresholdDifferenceQ4',
+                render: (text, title) => {
+                    if (title.category == '1.Supplies' || title.category == '2.OPS') {
+                        return (
+                            <CurrencyFormat value={text} displayType={'text'} thousandSeparator={true} prefix={'$'} />
+                        )
+                    }
+                    else {
+                        return (
+                            <strong>{text}</strong>
+                        )
+                    }
+                }
             },
             {
                 title: "",
@@ -1818,7 +1903,7 @@ class Audit extends React.Component {
                                     Previous
                                 </Button>
                             )}
-                            {current === steps.length - 1 && (<div style={{ marginTop: '-2.5em' }}>
+                            {current === steps.length - 1 &&  (<div style={{ marginTop: '-2.5em' }}>
                                 <Button style={{ paddingTop: "-20em", marginLeft: '89em', backgroundColor: "#0086c0", color: "#fff" }} onClick={this.sentMail}>
                                     Send Letter
                                 </Button>
@@ -1832,11 +1917,8 @@ class Audit extends React.Component {
                         <Button key="back" onClick={this.handleCancel}>
                             Close
                         </Button>,
-                        <Button key="download" loading={this.state.letterDownloading} style={{ backgroundColor: "#ffba39", color: "#fff" }} onClick={this.handleOk}>
-                            Download Letter
-                        </Button>,
-                        <Button key="submit" loading={this.state.letterSending} style={{ backgroundColor: "#5cb85c", color: "#fff" }} onClick={this.sendEmail}>
-                            Send
+                        <Button key="next" type='primary' loading={this.state.nextButtonLoading} onClick={this.nextModal}>
+                            Next
                         </Button>
                     ]}
                     width={800}>
@@ -1883,6 +1965,153 @@ class Audit extends React.Component {
                             <TextArea rows={1} onChange={this.text} id="emailNote5" value={this.state.emailNote5} />
                         </Col>
                     </Col>
+                </Modal>
+                <Modal visible={this.state.secondModel} onOk={this.handleOk} onCancel={this.handleCancel}
+                    footer={[
+                        <Button key="back" onClick={this.prevModal}>
+                            Back
+                    </Button>,
+                        <Button key="download" loading={this.state.letterDownloading} style={{ backgroundColor: "#ffba39", color: "#fff" }} onClick={this.handleOk}>
+                            Download Letter
+                        </Button>,
+                        <Button key="submit" loading={this.state.letterSending} style={{ backgroundColor: "#5cb85c", color: "#fff" }} onClick={this.sendEmail}>
+                            Send
+                        </Button>
+                    ]}
+                    width={1000}>
+                    <div className="body">
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={9} style={{ marginTop: '8em' }}>
+                                <p id="font" className="top-left">HP México</p>
+                                <p id="font" className="top-left">Avenida Javier Barros Sierra 495, Piso 11 y 10</p>
+                                <p id="font" className="top-left">Col. Santa Fe, Alc. Álvaro Obregón</p>
+                                <p id="font" className="top-left">C.P. 01376, Ciudad de México, México</p>
+                            </Col>
+                            <Col span={8}></Col>
+                            <Col span={4} style={{ marginTop: '2em' }}>
+                                <img src={Image} style={{ width: "8em" }} alt="Hp logo" />
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '3em' }}>
+                            <Col span={14}></Col>
+                            <Col span={9} style={{ marginLeft: '-2em' }}>
+                                <p id="font" className="text-2">NOTIFICACIÓN POR INCUMPLIMIENTO DEL</p>
+                                <p id="font" className="text-2">HP QUALIFIED DISTRIBUTION</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '3em' }}>
+                            <Col span={2}></Col>
+                            <Col span={7}>
+                                <p id="font" className="date">{moment().format("YYYY MMM Do")}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={7}>
+                                <p id="font" style={{ fontWeight: '700' }}>{sessionStorage.getItem('accountName')}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={7}>
+                                <p style={{ fontWeight: '800', marginTop: '-0.5em' }} id="font">P R E S E N T E</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">HP desarrolló e implemento el Programa HP Qualified Distribution (QD). Este programa contempla
+                                ciertos beneficios y obligaciones tanto para HP como para los Socios de Negocios que fueron
+                                aceptados para ser parte de este. Uno de los mayores beneficios, es el acceso a la compra de
+                        Productos Originales HP, a través de los Mayoristas autorizados.</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <div><span id="font">Por la presente le notificamos el incumplimiento a los lineamientos establecidos en el Programa, por
+                         parte de la compañía a la cual usted representa, como a continuación se detalla:</span></div>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1.5em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">1. {this.state.emailNote1}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">2. {this.state.emailNote2}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">3. {this.state.emailNote3}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">4. {this.state.emailNote4}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">5. {this.state.emailNote5}</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">Por lo que le solicitamos que realice los ajustes correspondientes a fin de cumplir con los lineamientos
+                                del Programa de Distribución Calificada de HP dentro de los 30 días posteriores a la recepción de este
+                                aviso. En caso de no realizar los cambios antes solicitados o de reincidencia, podría causar la baja del
+                        Programa.</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}>
+                                <p id="font">En caso de dudas, por favor escríbanos a través de la dirección de correo electrónico
+                        HPMXQualifiedPartnerPrograms@hp.com.</p>
+                            </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={6}><p id="font" style={{ fontWeight: '700' }}>Atentamente,</p> </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={6}><p id="font" style={{ color: 'blue' }}>Qualified Distribution </p> </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={6} style={{ marginTop: '-0.7em' }}><p id="font">HP Mexico</p> </Col>
+                        </Col>
+                        <Col span={24}>
+                            <Col span={2}></Col>
+                            <Col span={9} style={{ marginTop: '-0.7em' }}><p id="font">Email: HPMXQualifiedPartnerPrograms@hp.com</p> </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '9em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}><h5 id="font">Este documento contiene información confidencial de HP para Socios elegibles en relación con información técnica, información sobre precios,
+                            planes y estrategias relacionadas con productos, promociones, listas de clientes e información técnica, financiera o comercial. La parte
+                    receptora tratará dicha información como "Información confidencial" si aplica lo siguiente:</h5> </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}><h5 id="font">Si la parte reveladora lo proporciona de manera tangible y directa a la parte receptora, la información se marca como confidencial
+                    en el momento de la divulgación,</h5> </Col>
+                        </Col>
+                        <Col span={24} style={{ marginTop: '1em', marginBottom: '2em' }}>
+                            <Col span={2}></Col>
+                            <Col span={20}><h5 id="font">Si se divulga de manera electrónica, visual u oral, la parte divulgadora declara o indica que la información es confidencial.</h5> </Col>
+                        </Col>
+                    </div>
                 </Modal>
             </div >
         );
